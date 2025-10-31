@@ -1,0 +1,175 @@
+PROJET : FONDATION CCC – Plateforme de gestion et diffusion des actualités
+
+-------------------------------------------------------
+OBJECTIF GÉNÉRAL
+-------------------------------------------------------
+Créer une plateforme complète (mobile + web) pour la Fondation CCC pour les étudiants permettant :
+1. La création, modération et diffusion d’actualités internes (news)
+2. L’abonnement des utilisateurs à des programmes spécifiques
+3. La réception de notifications selon les préférences de chaque utilisateur
+4. La gestion centralisée des utilisateurs, rôles et droits via un backend sécurisé
+
+Technologies :
+- Frontend mobile/web : Flutter
+- Backend : Django REST Framework (avec SimpleJWT)
+- Base de données : SQLite (dev) / PostgreSQL (prod)
+- Authentification : JWT
+- Notifications push (future intégration) : Firebase Cloud Messaging (FCM)
+
+-------------------------------------------------------
+ARCHITECTURE GÉNÉRALE
+-------------------------------------------------------
+Frontend (Flutter)
+   ↕︎ communique via HTTP/JSON ↕︎
+Backend (Django REST API)
+   ↕︎
+Base de données (PostgreSQL)
+   ↕︎
+Stockage des fichiers (Django Media / S3 ou Firebase Storage)
+
+-------------------------------------------------------
+MODULES ET FONCTIONNALITÉS
+-------------------------------------------------------
+
+### 1. AUTHENTIFICATION UTILISATEUR
+- Inscription (signup)
+  → endpoint : POST /api/signup/
+  → crée un utilisateur avec rôle "Étudiant" par défaut
+  → crée automatiquement ses préférences de notification par défaut
+
+- Connexion (login)
+  → endpoint : POST /api/token/
+  → renvoie access token + refresh token JWT
+
+- Rafraîchissement du token
+  → endpoint : POST /api/token/refresh/
+
+- Profil utilisateur connecté
+  → endpoint : GET /api/me/
+  → renvoie les informations du user connecté
+
+- Déconnexion (coté Flutter)
+  → suppression du token local
+
+### 2. GESTION DES RÔLES ET UTILISATEURS
+- Rôles disponibles :
+  - Admin : gestion complète (backend, validations, utilisateurs)
+  - Modérateur : approuve/rejette les actualités
+  - Publiant : crée et soumet des actualités
+  - Étudiant : lit les news selon ses abonnements
+
+- Tables concernées :
+  - User
+  - Role
+  - UserRole
+
+### 3. GESTION DES PROGRAMMES
+- Un programme représente un domaine (ex : Informatique, Gestion, Communication)
+- CRUD complet : création, modification, suppression
+- Table concernée : Program
+- Endpoint : /api/programs/
+
+### 4. ABONNEMENTS AUX PROGRAMMES
+- Un utilisateur peut s’abonner à un ou plusieurs programmes
+- Les news affichées dépendent de ses abonnements
+- Table : Subscription (user_id, program_id)
+- Endpoint : /api/subscriptions/
+
+### 5. GESTION DES ACTUALITÉS (NEWS)
+- Chaque actualité est liée à :
+  - Un auteur (publiant)
+  - Un programme cible
+  - Une importance (faible, moyenne, importante, urgente)
+  - Un statut (brouillon, validé, invalidé)
+  - Des dates : rédaction, modération, publication
+- Table : News
+- Endpoint : /api/news/
+
+#### Processus d’une news :
+1. Un publiant crée une news (brouillon)
+2. Un modérateur l’approuve ou la rejette
+3. L’admin planifie la publication
+4. Les abonnés du programme reçoivent la notification
+
+### 6. MODÉRATION
+- Table : Moderation (news_id, moderator_id, approved, comment)
+- Endpoint : /api/moderations/
+- Actions :
+  - Approuver une news
+  - Refuser une news
+  - Ajouter un commentaire de modération
+
+### 7. PIÈCES JOINTES
+- Chaque news peut avoir plusieurs fichiers (PDF, images…)
+- Table : Attachment (news_id, filename, mime, url, filesize)
+- Endpoint : /api/attachments/
+
+### 8. JOURNAL DE PUBLICATION
+- Suivi des publications effectives
+- Table : PublicationLog (news_id, published_at, channel, sent_count)
+- Endpoint : /api/logs/
+
+### 9. PRÉFÉRENCES DE NOTIFICATION
+- Table : NotificationPref (user_id, frequency, push_enabled, email_enabled)
+- Endpoint : /api/notifications/
+- Fréquences disponibles :
+  - immediate → envoi instantané
+  - daily → résumé journalier
+  - weekly → résumé hebdomadaire
+
+### 10. NOTIFICATIONS PUSH (future étape)
+- À implémenter plus tard via Firebase Cloud Messaging (FCM)
+- Envoi basé sur l’importance de la news :
+  - immédiat si "urgente"
+  - regroupé sinon (selon fréquence utilisateur)
+
+-------------------------------------------------------
+API DISPONIBLES
+-------------------------------------------------------
+
+| Ressource | Méthode | URL | Description |
+|------------|----------|-----|-------------|
+| Auth | POST | /api/signup/ | Créer un compte |
+| Auth | POST | /api/token/ | Obtenir le token JWT |
+| Auth | POST | /api/token/refresh/ | Rafraîchir le token |
+| Auth | GET | /api/me/ | Infos de l’utilisateur connecté |
+| Users | GET/POST | /api/users/ | Gérer les utilisateurs |
+| Roles | GET/POST | /api/roles/ | Gérer les rôles |
+| Programs | GET/POST | /api/programs/ | CRUD des programmes |
+| Subscriptions | GET/POST | /api/subscriptions/ | Gérer les abonnements |
+| News | GET/POST | /api/news/ | Gérer les actualités |
+| Moderations | GET/POST | /api/moderations/ | Gérer la validation des news |
+| Attachments | GET/POST | /api/attachments/ | Gérer les fichiers liés |
+| Logs | GET/POST | /api/logs/ | Historique de publication |
+| Notifications | GET/POST | /api/notifications/ | Préférences de notification |
+
+-------------------------------------------------------
+ARCHITECTURE FLUTTER CIBLE
+-------------------------------------------------------
+
+### Écrans principaux :
+1. SplashScreen — redirige selon token
+2. LoginPage — connexion (POST /api/token/)
+3. SignupPage — création compte (POST /api/signup/)
+4. HomePage — affichage des news des programmes abonnés
+5. NewsDetailsPage — détail d’une news
+6. ProgramsPage — liste des programmes + abonnement
+7. ProfilePage — profil utilisateur (GET /api/me/)
+8. SettingsPage — préférences de notification
+
+### Services Flutter :
+- api_service.dart : communication HTTP avec Django
+- auth_service.dart : gestion du token JWT (login/logout/refresh)
+- storage_service.dart : sauvegarde du token local (GetStorage)
+- models/ : classes Dart correspondant aux tables Django
+
+-------------------------------------------------------
+POINTS IMPORTANTS
+-------------------------------------------------------
+- Toutes les requêtes Flutter (sauf signup/login) doivent contenir :
+  `Authorization: Bearer <token>`
+- Backend à déployer sur Render / VPS plus tard
+- Base SQLite en développement
+- Admin accessible sur : /admin/
+- Backend lancé localement via :
+  python manage.py runserver

@@ -1,0 +1,66 @@
+Projet — Système de diffusion d’informations pour les 
+étudiants de Kinshasa 
+Encadrant : DIOGO NORMAN Nono 
+Catégorie : Application web & mobile (Python backend, Android/Flutter frontend) 
+1 — Contexte
+
+Dans les universités de Kinshasa (UNIKIN, UPN, autres institutions), de nombreuses informations 
+circulent auprès des étudiants : annonces de la scolarité, messages des enseignants, activités 
+associatives, événements culturels ou scientifiques. Ces informations sont souvent dispersées entre 
+mails, affichages et réseaux sociaux, rendant leur consultation et suivi difficiles.
+    L’objectif de ce projet est de créer un système centralisé de diffusion d’informations permettant 
+aux étudiants de : 
+Recevoir des informations pertinentes pour leur année ou programme de formation. 
+Consulter un site web regroupant toutes les news validées. 
+Utiliser une application mobile Android pour accéder facilement aux informations. 
+Paramétrer la fréquence de réception des notifications (immédiate, quotidienne, 
+hebdomadaire). 
+Ce projet combine un intérêt pédagogique pour les étudiants en informatique et un intérêt 
+pratique pour faciliter la communication universitaire. 
+2 — Objectifs pédagogiques 
+Le projet doit permettre aux étudiants de : 
+1. Maîtriser le développement full-stack avec Python pour le backend (Django ou Flask) et 
+un frontend web simple (HTML/CSS/JS ou React). 
+2. Créer une API sécurisée pour la consultation, création et modération des news. 
+3. Mettre en place une application mobile (Android ou Flutter) pour consulter les 
+informations. 
+4. Gérer les utilisateurs et les rôles : administrateurs, modérateurs, publiants et étudiants. 
+5. Implémenter des notifications personnalisées selon la fréquence souhaitée. 
+6. Développer des compétences en documentation et livraison de projet, avec un guide 
+d’installation et un livrable clair pour les formateurs
+
+3 — Description fonctionnelle 
+3.1 — Propriétés des news 
+Chaque news possède les attributs suivants : 
+Programme ou formation destinataire 
+Date de rédaction 
+Date de modération 
+Titre et contenu avant modération 
+Titre et contenu après modération 
+Accord du modérateur 
+Dates souhaitées et effectives de publication 
+Administrateur ayant invalidé la news (si applicable) 
+Motivation de l’invalidation 
+Importance de la news (faible / moyenne / importante / urgente) 
+3.2 — Acteurs et rôles 
+Administrateurs : gestion des utilisateurs et des rôles, contrôle de la publication. 
+Modérateurs : valident ou refusent les news, peuvent commenter l’invalidation. 
+Publiants : créent et soumettent des news (enseignants, responsables d’associations, 
+secrétariat universitaire). 
+Étudiants : consultent les news via site web ou application mobile, paramètrent la 
+fréquence des notifications. 
+3.3 — Fréquences de notification possibles 
+À chaque nouvelle information 
+Une fois par jour (digest) 
+Une fois par semaine (digest), sauf pour les news très importantes 
+
+4 — Modules à réaliser 
+Module Fonctionnalités principales 
+Administration Gestion des utilisateurs, rôles et permissions 
+Gestion des news Créer, modifier, supprimer, dupliquer, consulter les news 
+Modération Valider ou invalider une news, commenter l’invalidation 
+Paramètres de 
+notification Définir fréquence et type de notifications (mail, push) 
+Application web Interface de consultation par programme/année, tri par date ou 
+importance 
+Application mobile Consultation des news, notifications push, filtrage par programme

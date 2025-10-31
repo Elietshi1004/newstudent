@@ -1,0 +1,12 @@
+{
+    "users": "http://127.0.0.1:8000/api/users/",
+    "roles": "http://127.0.0.1:8000/api/roles/",
+    "userroles": "http://127.0.0.1:8000/api/userroles/",
+    "programs": "http://127.0.0.1:8000/api/programs/",
+    "subscriptions": "http://127.0.0.1:8000/api/subscriptions/",
+    "news": "http://127.0.0.1:8000/api/news/",
+    "moderations": "http://127.0.0.1:8000/api/moderations/",
+    "attachments": "http://127.0.0.1:8000/api/attachments/",
+    "logs": "http://127.0.0.1:8000/api/logs/",
+    "notifications": "http://127.0.0.1:8000/api/notifications/"
+}
