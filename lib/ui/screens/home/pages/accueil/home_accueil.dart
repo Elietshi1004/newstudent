@@ -57,10 +57,11 @@ class _HomeAccueilState extends State<HomeAccueil> {
     List<News> filtered;
     if (_selectedCategory != 'Tout' &&
         _newsController.searchQuery.value.isEmpty) {
-      filtered =
-          news
-              .where((news) => news.program?.name == _selectedCategory)
-              .toList();
+      var program = Setting.programCtrl.programs.firstWhereOrNull(
+        (program) => program.name == _selectedCategory,
+      );
+      print("program: ${program?.id}");
+      filtered = news.where((news) => news.programId == program?.id).toList();
     } else {
       filtered = news;
     }
