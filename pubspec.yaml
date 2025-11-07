@@ -41,6 +41,7 @@ dependencies:
   animate_do:
   google_fonts:
   file_picker:
+  onesignal_flutter:
 
 dev_dependencies:
   flutter_test:

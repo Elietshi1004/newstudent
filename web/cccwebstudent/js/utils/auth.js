@@ -1,4 +1,4 @@
-const API_BASE = 'http://172.18.197.188:8000';
+const API_BASE = 'http://10.51.109.188:8000';
 const TOKEN_KEY = 'ccc_access_token';
 const REFRESH_KEY = 'ccc_refresh_token';
 

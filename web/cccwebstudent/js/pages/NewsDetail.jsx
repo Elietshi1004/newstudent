@@ -8,12 +8,23 @@ function getFirstImage(news) {
   return img && img.file ? img.file : '';
 }
 
-function NewsDetail({ news, onBack }) {
+function NewsDetail({ news, onBack, onNewsViewed }) {
   if (!news) return null;
   const img = getFirstImage(news);
   const title = news.title_final || news.title_draft || 'Sans titre';
   const content = news.content_final || news.content_draft || '';
   const [progName, setProgName] = React.useState(typeof news.program === 'object' && news.program ? (news.program.name || 'Programme') : '');
+  
+  // Marquer la news comme vue quand elle s'affiche
+  React.useEffect(() => {
+    if (news && news.moderator_approved && news.id) {
+      newsViews.markAsViewed(news.id).then(() => {
+        // Notifier le parent que la news a été vue
+        if (onNewsViewed) onNewsViewed(news.id);
+      });
+    }
+  }, [news, onNewsViewed]);
+
   React.useEffect(() => {
     if (!progName && news && news.program && typeof news.program !== 'object') {
       const id = news.program;
@@ -33,23 +44,61 @@ function NewsDetail({ news, onBack }) {
     }
   }, [news, progName]);
   const programName = progName || (typeof news.program === 'object' && news.program ? (news.program.name || 'Programme') : 'Programme');
+  
   return (
-    <div className="container" style={{paddingTop:20}}>
-      <button className="nav-btn" onClick={onBack}>&larr; Retour</button>
-      <div className="card" style={{marginTop:12}}>
-        <div style={{display:'flex', gap:10, alignItems:'center', marginBottom:10}}>
-          <span className="chip program">{programName}</span>
-          <ImportanceChip importance={news.importance} />
-        </div>
-        {img ? (
-          <div style={{margin:'8px 0 12px'}}>
-            <img src={img} alt="illustration" style={{width:'100%', height:240, objectFit:'cover', borderRadius:12, border:'1px solid #e5e7eb'}} />
+    <div className="news-detail-container">
+      {/* Bouton retour */}
+      <button className="news-detail-back-btn" onClick={onBack}>
+        <span className="back-icon">←</span>
+        <span>Retour</span>
+      </button>
+
+      {/* Article principal */}
+      <article className="news-detail-article">
+        {/* Header avec badges */}
+        <div className="news-detail-header">
+          <div className="news-detail-badges">
+            <span className="news-detail-chip program">{programName}</span>
+            <ImportanceChip importance={news.importance} />
           </div>
-        ) : null}
-        <h2 style={{margin:'6px 0 12px'}}>{title}</h2>
-        <div className="muted" style={{marginBottom:12}}>{new Date(news.written_at).toLocaleString('fr-FR')}</div>
-        <p style={{whiteSpace:'pre-wrap', lineHeight:1.6}}>{content}</p>
-      </div>
+          <div className="news-detail-meta">
+            <span className="news-detail-date-icon">📅</span>
+            <span className="news-detail-date">
+              {new Date(news.written_at).toLocaleDateString('fr-FR', { 
+                weekday: 'long',
+                day: 'numeric', 
+                month: 'long',
+                year: 'numeric'
+              })}
+            </span>
+          </div>
+        </div>
+
+        {/* Image principale */}
+        {img && (
+          <div className="news-detail-image-wrapper">
+            <img src={img} alt="Illustration" className="news-detail-image" />
+          </div>
+        )}
+
+        {/* Titre */}
+        <h1 className="news-detail-title">{title}</h1>
+
+        {/* Contenu */}
+        <div className="news-detail-content">
+          <div className="news-detail-text" dangerouslySetInnerHTML={{__html: content.replace(/\n/g, '<br />')}} />
+        </div>
+
+        {/* Footer avec actions */}
+        <div className="news-detail-footer">
+          <div className="news-detail-share">
+            <span className="share-label">Partager :</span>
+            <button className="share-btn" title="Copier le lien">
+              🔗
+            </button>
+          </div>
+        </div>
+      </article>
     </div>
   );
 }

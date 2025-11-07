@@ -53,6 +53,8 @@ class NewsCard extends StatelessWidget {
     final hasHighImportance =
         news.importance == Importance.importante ||
         news.importance == Importance.urgente;
+    final bool shouldShowStatusBadge =
+        !Setting.userRoleCtrl.isStudent();
 
     print("titleFinal: ${news.titleFinal}");
 
@@ -95,11 +97,37 @@ class NewsCard extends StatelessWidget {
                   ),
                   child: _buildImage(),
                 ),
-                Positioned(
-                  right: 12,
-                  top: 12,
-                  child: _buildStatusBadge(isPending, isApproved, isRejected),
-                ),
+                if (shouldShowStatusBadge)
+                  Positioned(
+                    right: 12,
+                    top: 12,
+                    child: _buildStatusBadge(
+                      isPending,
+                      isApproved,
+                      isRejected,
+                    ),
+                  ),
+                // Badge pour les news non lues
+                if (isApproved)
+                  Obx(() {
+                    final isUnread =
+                        !Setting.newsViewCtrl.isNewsViewed(news.id);
+                    if (isUnread) {
+                      return Positioned(
+                        left: 12,
+                        top: 12,
+                        child: Container(
+                          width: 12,
+                          height: 12,
+                          decoration: const BoxDecoration(
+                            color: AppColors.notificationBadge,
+                            shape: BoxShape.circle,
+                          ),
+                        ),
+                      );
+                    }
+                    return const SizedBox.shrink();
+                  }),
               ],
             ),
             Padding(
@@ -186,6 +214,8 @@ class NewsCard extends StatelessWidget {
     final hasHighImportance =
         news.importance == Importance.importante ||
         news.importance == Importance.urgente;
+    final bool shouldShowStatusBadge =
+        !Setting.userRoleCtrl.isStudent();
 
     return GestureDetector(
       onTap: () => Get.toNamed('/news/detail', arguments: news),
@@ -257,14 +287,15 @@ class NewsCard extends StatelessWidget {
                             padding: const EdgeInsets.only(left: 8),
                             child: _buildImportanceBadge(),
                           ),
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: _buildStatusBadge(
-                            isPending,
-                            isApproved,
-                            isRejected,
+                        if (shouldShowStatusBadge)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: _buildStatusBadge(
+                              isPending,
+                              isApproved,
+                              isRejected,
+                            ),
                           ),
-                        ),
                       ],
                     ),
                     const SizedBox(height: 6),

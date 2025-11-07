@@ -1,4 +1,6 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:onesignal_flutter/onesignal_flutter.dart';
 import 'package:get/get.dart';
 import 'package:newstudent/utils/Setting.dart';
 import '../../../../controllers/user_role_controller.dart';
@@ -61,6 +63,46 @@ class _HomeUIState extends State<HomeUI> {
     Setting.authCtrl;
     if (Setting.authCtrl.userData['id'] == null) {
       Setting.authCtrl.refreshUserData();
+    }
+    if (!kIsWeb) {
+      printDebug("initialize one signal ${Setting.authCtrl.userData['email']}");
+      OneSignal.initialize(Setting.onesignal_app_id);
+      OneSignal.login(Setting.authCtrl.userData['id'].toString());
+      printDebug("initialize one signal success");
+      OneSignal.Notifications.addForegroundWillDisplayListener((event) {
+        print(
+          'NOTIFICATION WILL DISPLAY LISTENER CALLED WITH: ${event.notification.jsonRepresentation()}',
+        );
+
+        /// Display Notification, preventDefault to not display
+        event.preventDefault();
+
+        /// Do async work
+
+        /// notification.display() to display after preventing default
+        event.notification.display();
+
+        // this.setState(() {
+        //   _debugLabelString =
+        //       "Notification received in foreground notification: \n${event.notification.jsonRepresentation().replaceAll("\\n", "\n")}";
+        // });
+      });
+      printDebug("getOnesignalId");
+      OneSignal.User.getOnesignalId().then((value) async {
+        printDebug("getOnesignalId success $value");
+        if (value != null) {
+          // Enregistrer l'abonnement push OneSignal
+          final userId = Setting.authCtrl.userData['id']?.toString() ?? '';
+          if (userId.isNotEmpty) {
+            await Setting.pushSubscriptionCtrl.registerPushSubscription(
+              externalUserId: userId,
+              deviceToken: value,
+            );
+            printDebug("Push subscription registered: $userId");
+          }
+        }
+      });
+      printDebug("getOnesignalId success");
     }
   }
 

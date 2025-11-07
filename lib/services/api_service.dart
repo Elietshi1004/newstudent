@@ -6,7 +6,7 @@ import 'auth_service.dart';
 class ApiService {
   // URL de base du backend (à modifier selon votre configuration)
   // static const String baseUrl = 'http://127.0.0.1:8000';
-  static const String baseUrl = "http://172.18.197.188:8000";
+  static const String baseUrl = "http://10.51.109.188:8000";
 
   // Méthode générique pour les requêtes GET
   static Future<Map<String, dynamic>> getRequest(String endpoint) async {

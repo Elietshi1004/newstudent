@@ -127,7 +127,7 @@ function ModerationPage() {
     setLoading(true);
     try {
       // 1. Mettre à jour title_final et content_final
-      const updateRes = await authFetch(`/api/news/${selectedNews.id}/`, {
+      const updateRes = await authFetch(`/api/news/${selectedNews.id}/update/`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -175,7 +175,7 @@ function ModerationPage() {
       }
 
       // 4. Mettre à jour la news (moderator_approved, etc.)
-      const finalUpdateRes = await authFetch(`/api/news/${selectedNews.id}/`, {
+      const finalUpdateRes = await authFetch(`/api/news/${selectedNews.id}/update/`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -245,7 +245,7 @@ function ModerationPage() {
       }
 
       // Mettre à jour la news
-      const updateRes = await authFetch(`/api/news/${selectedNews.id}/`, {
+      const updateRes = await authFetch(`/api/news/${selectedNews.id}/update/`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

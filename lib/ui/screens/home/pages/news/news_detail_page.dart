@@ -5,8 +5,25 @@ import '../../../../../utils/Setting.dart';
 import '../../../../../models/news.dart';
 import '../../../../../models/attachment.dart';
 
-class NewsDetailPage extends StatelessWidget {
+class NewsDetailPage extends StatefulWidget {
   const NewsDetailPage({super.key});
+
+  @override
+  State<NewsDetailPage> createState() => _NewsDetailPageState();
+}
+
+class _NewsDetailPageState extends State<NewsDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      // Marquer la news comme vue quand la page s'affiche
+      final News news = Get.arguments as News;
+      if (news.moderatorApproved) {
+        Setting.newsViewCtrl.markNewsAsViewed(news.id);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -165,8 +182,303 @@ class NewsDetailPage extends StatelessWidget {
                   });
                 },
               ),
+
+              const SizedBox(height: 32),
+
+              // Section News Similaires
+              _buildSimilarNewsSection(news),
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSimilarNewsSection(News currentNews) {
+    final programId = currentNews.program?.id ?? currentNews.programId;
+    if (programId == null) return const SizedBox.shrink();
+
+    return Obx(() {
+      final newsController = Setting.newsCtrl;
+      final allNews = newsController.newsList;
+
+      // Filtrer les news similaires (même programme, approuvées, exclure la news actuelle)
+      final similarNews =
+          allNews
+              .where(
+                (n) =>
+                    n.moderatorApproved &&
+                    (n.program?.id ?? n.programId) == programId &&
+                    n.id != currentNews.id,
+              )
+              .toList();
+
+      // Limiter à 6 news similaires et trier par date (plus récentes d'abord)
+      similarNews.sort((a, b) => b.writtenAt.compareTo(a.writtenAt));
+      final limitedSimilarNews = similarNews.take(6).toList();
+
+      if (limitedSimilarNews.isEmpty) return const SizedBox.shrink();
+
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Titre de la section
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: const Icon(
+                  Icons.article_outlined,
+                  color: AppColors.primary,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Similaires à celle-ci',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Liste horizontale des news similaires
+          SizedBox(
+            height: 280,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: limitedSimilarNews.length,
+              separatorBuilder: (context, index) => const SizedBox(width: 16),
+              itemBuilder: (context, index) {
+                final similarNewsItem = limitedSimilarNews[index];
+                return _buildSimilarNewsCard(similarNewsItem);
+              },
+            ),
+          ),
+        ],
+      );
+    });
+  }
+
+  Widget _buildSimilarNewsCard(News news) {
+    final programName =
+        news.program?.name ??
+        (news.programId != null
+            ? (Setting.programCtrl.getProgramById(news.programId!)?.name ??
+                'Programme')
+            : 'Programme');
+
+    // Récupérer la première image
+    final imageAttachment =
+        news.attachments.where((att) => _isImageAttachment(att)).firstOrNull;
+
+    return InkWell(
+      onTap: () {
+        printDebug('news: ${news.id}');
+        Get.to(() => const NewsDetailPage(), arguments: news);
+      },
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        width: 240,
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: AppColors.textLight.withOpacity(0.2),
+            width: 1,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image
+            if (imageAttachment != null)
+              ClipRRect(
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(16),
+                ),
+                child: IgnorePointer(
+                  child: Stack(
+                    children: [
+                      Image.network(
+                        imageAttachment.file,
+                        width: double.infinity,
+                        height: 140,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            height: 140,
+                            width: double.infinity,
+                            color: Colors.grey[200],
+                            child: const Icon(
+                              Icons.image_outlined,
+                              color: Colors.grey,
+                              size: 40,
+                            ),
+                          );
+                        },
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return Container(
+                            height: 140,
+                            width: double.infinity,
+                            color: Colors.grey[200],
+                            child: const Center(
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            ),
+                          );
+                        },
+                      ),
+                      // Badge d'importance
+                      if (news.importance == Importance.urgente ||
+                          news.importance == Importance.importante)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  news.importance == Importance.urgente
+                                      ? AppColors.error
+                                      : AppColors.warning,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  news.importance == Importance.urgente
+                                      ? Icons.priority_high
+                                      : Icons.star,
+                                  size: 12,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  news.importance == Importance.urgente
+                                      ? 'Urgente'
+                                      : 'Importante',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              )
+            else
+              Container(
+                height: 140,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.1),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
+                ),
+                child: const Icon(
+                  Icons.article_outlined,
+                  color: AppColors.primary,
+                  size: 40,
+                ),
+              ),
+
+            // Contenu
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Programme
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.tagCampus.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        programName,
+                        style: TextStyle(
+                          color: AppColors.tagCampus,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Titre
+                    Expanded(
+                      child: Text(
+                        news.titleFinal.isNotEmpty
+                            ? news.titleFinal
+                            : news.titleDraft,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                          height: 1.3,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+
+                    // Date
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.access_time,
+                          size: 12,
+                          color: AppColors.textLight,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          _formatDate(news.writtenAt),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textLight,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

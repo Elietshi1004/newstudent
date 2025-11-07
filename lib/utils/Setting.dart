@@ -11,6 +11,8 @@ import '../controllers/program_controller.dart';
 import '../controllers/subscription_controller.dart';
 import '../controllers/user_role_controller.dart';
 import '../controllers/moderation_controller.dart';
+import '../controllers/news_view_controller.dart';
+import '../controllers/push_subscription_controller.dart';
 import '../services/storage_service.dart';
 
 void printDebug(Object? message) {
@@ -21,6 +23,9 @@ void printDebug(Object? message) {
 
 class Setting {
   static const String baseUrl = 'http://127.0.0.1:8000/';
+  static const String onesignal_app_id = 'c2db50d7-c369-4be9-81f1-29f4455c26fb';
+  static const String onesignal_secret_key =
+      'os_v2_app_ylnvbv6dnff6taprfh2ekxbg7ngb3ihhyf7ubv5fly6xkadme4errldtej2kd7otllb4h7qm2essieff5c3fd3xieznxi2eir2adlzy';
 
   static Future<void> init() async {
     try {
@@ -151,6 +156,22 @@ class Setting {
       return Get.find<RolesController>();
     } catch (e) {
       return Get.put(RolesController());
+    }
+  }
+
+  static NewsViewController get newsViewCtrl {
+    try {
+      return Get.find<NewsViewController>();
+    } catch (e) {
+      return Get.put(NewsViewController());
+    }
+  }
+
+  static PushSubscriptionController get pushSubscriptionCtrl {
+    try {
+      return Get.find<PushSubscriptionController>();
+    } catch (e) {
+      return Get.put(PushSubscriptionController());
     }
   }
 }

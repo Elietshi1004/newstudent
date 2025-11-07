@@ -78,4 +78,17 @@ class BDColumns {
   static const String notificationPrefPushEnabled = 'push_enabled';
   static const String notificationPrefEmailEnabled = 'email_enabled';
   static const String notificationPrefUpdatedAt = 'updated_at';
+
+  // NewsView columns
+  static const String newsViewId = 'id';
+  static const String newsViewUser = 'user';
+  static const String newsViewNews = 'news';
+  static const String newsViewViewedAt = 'viewed_at';
+
+  // PushSubscription columns
+  static const String pushSubscriptionId = 'id';
+  static const String pushSubscriptionUser = 'user';
+  static const String pushSubscriptionExternalUserId = 'external_user_id';
+  static const String pushSubscriptionDeviceToken = 'device_token';
+  static const String pushSubscriptionCreatedAt = 'created_at';
 }

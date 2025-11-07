@@ -32,6 +32,8 @@ class _HomeAccueilState extends State<HomeAccueil> {
     super.initState();
     _searchController.addListener(_onSearchChanged);
     _newsController.fetchNewsForMySubscriptions();
+    // Charger les news non lues pour afficher les badges si nécessaire
+    Setting.newsViewCtrl.fetchUnreadNews();
   }
 
   @override
@@ -57,11 +59,19 @@ class _HomeAccueilState extends State<HomeAccueil> {
     List<News> filtered;
     if (_selectedCategory != 'Tout' &&
         _newsController.searchQuery.value.isEmpty) {
-      var program = Setting.programCtrl.programs.firstWhereOrNull(
-        (program) => program.name == _selectedCategory,
-      );
-      print("program: ${program?.id}");
-      filtered = news.where((news) => news.programId == program?.id).toList();
+      if (_selectedCategory == 'Non vue') {
+        // Filtrer pour n'afficher que les news non lues
+        final unreadNewsIds =
+            Setting.newsViewCtrl.unreadNews.map((n) => n.id).toSet();
+        filtered =
+            news.where((news) => unreadNewsIds.contains(news.id)).toList();
+      } else {
+        var program = Setting.programCtrl.programs.firstWhereOrNull(
+          (program) => program.name == _selectedCategory,
+        );
+        print("program: ${program?.id}");
+        filtered = news.where((news) => news.programId == program?.id).toList();
+      }
     } else {
       filtered = news;
     }
@@ -208,7 +218,7 @@ class _HomeAccueilState extends State<HomeAccueil> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'EduNews',
+                'News Student',
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -225,26 +235,52 @@ class _HomeAccueilState extends State<HomeAccueil> {
               ),
             ],
           ),
-          // Stack(
-          //   children: [
-          //     IconButton(
-          //       icon: const Icon(Icons.notifications_outlined),
-          //       onPressed: () {},
-          //     ),
-          //     Positioned(
-          //       right: 8,
-          //       top: 8,
-          //       child: Container(
-          //         width: 8,
-          //         height: 8,
-          //         decoration: const BoxDecoration(
-          //           color: AppColors.notificationBadge,
-          //           shape: BoxShape.circle,
-          //         ),
-          //       ),
-          //     ),
-          //   ],
-          // ),
+          Obx(() {
+            final isRefreshing =
+                _newsController.isLoading.value ||
+                    Setting.newsViewCtrl.isLoading.value;
+            return Tooltip(
+              message: 'Rafraîchir les actualités',
+              child: IconButton(
+                iconSize: 28,
+                onPressed: isRefreshing
+                    ? null
+                    : () async {
+                        await Future.wait([
+                          _newsController.fetchNewsForMySubscriptions(),
+                          Setting.newsViewCtrl.fetchUnreadNews(),
+                        ]);
+                      },
+                icon: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 250),
+                  transitionBuilder: (child, animation) => FadeTransition(
+                    opacity: animation,
+                    child: ScaleTransition(
+                      scale: animation,
+                      child: child,
+                    ),
+                  ),
+                  child: isRefreshing
+                      ? const SizedBox(
+                          key: ValueKey('loader'),
+                          width: 24,
+                          height: 24,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2.4,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              AppColors.primary,
+                            ),
+                          ),
+                        )
+                      : const Icon(
+                          Icons.refresh_rounded,
+                          key: ValueKey('refresh'),
+                          color: AppColors.textPrimary,
+                        ),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
@@ -322,7 +358,8 @@ class _HomeAccueilState extends State<HomeAccueil> {
           }
           final categ = map.values.toList();
 
-          final categories = ['Tout', ...categ.map((p) => p.name)];
+          final unreadCount = Setting.newsViewCtrl.unreadNews.length;
+          final categories = ['Tout', 'Non vue', ...categ.map((p) => p.name)];
 
           return SizedBox(
             height: 40,
@@ -332,6 +369,7 @@ class _HomeAccueilState extends State<HomeAccueil> {
               itemCount: categories.length,
               itemBuilder: (context, index) {
                 final category = categories[index];
+                final badgeCount = category == 'Non vue' ? unreadCount : null;
                 return Padding(
                   padding: const EdgeInsets.only(right: 8),
                   child: CategoryChip(
@@ -342,6 +380,7 @@ class _HomeAccueilState extends State<HomeAccueil> {
                         _selectedCategory = category;
                       });
                     },
+                    badgeCount: badgeCount,
                   ),
                 );
               },

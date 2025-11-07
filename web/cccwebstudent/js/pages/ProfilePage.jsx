@@ -1,4 +1,4 @@
-function ProfilePage({ onNavigate }) {
+function ProfilePage({ onNavigate, roleNames: propRoleNames }) {
   const [user, setUser] = React.useState(null);
   const [roles, setRoles] = React.useState([]);
 
@@ -13,33 +13,32 @@ function ProfilePage({ onNavigate }) {
       } catch (_) {}
       if (mounted) setUser(me);
 
-      // Load roles of current user (align with app: /api/userroles/)
-      let fetchedRoles = [];
-      try {
-        const res = await authFetch('/api/userroles/');
-        if (res.ok) {
-          const list = await res.json();
-          fetchedRoles = Array.isArray(list) ? list : (list.results || []);
-        }
-      } catch (_) {}
-      if (mounted) setRoles(fetchedRoles);
+      if (mounted && propRoleNames && propRoleNames.length) {
+        setRoles(propRoleNames);
+      } else {
+        // Fallback if no roles passed, attempt to fetch once
+        try {
+          const res = await authFetch('/api/me/');
+          if (res.ok) {
+            const meData = await res.json();
+            if (meData && Array.isArray(meData.roles)) {
+              setRoles(meData.roles.map(r => r.name ? r.name : r));
+            }
+          }
+        } catch (_) {}
+      }
     }
     load();
     return () => { mounted = false; };
-  }, []);
+  }, [propRoleNames]);
 
-  const roleNames = React.useMemo(() => {
-    const names = [];
-    (roles || []).forEach(r => {
-      if (typeof r.role === 'object' && r.role && r.role.name) names.push(r.role.name);
-      else if (r.name) names.push(r.name);
-      else if (r.role_name) names.push(r.role_name);
-    });
-    return names.map(s => String(s).toLowerCase());
-  }, [roles]);
+  const normalizedRoles = React.useMemo(() => {
+    if (!roles || !roles.length) return Array.isArray(propRoleNames) ? propRoleNames.map(r => r.toLowerCase()) : [];
+    return roles.map(r => String(r).toLowerCase());
+  }, [roles, propRoleNames]);
 
-  const isStudent = roleNames.includes('etudiant') || roleNames.includes('student');
-  const isPubliant = roleNames.includes('publiant') || roleNames.includes('publisher') || roleNames.includes('auteur');
+  const isStudentUser = window.isStudent ? window.isStudent(normalizedRoles) : normalizedRoles.includes('étudiant');
+  const isPubliantFinal = window.isPubliant ? window.isPubliant(normalizedRoles) : normalizedRoles.includes('publiant');
 
   return (
     <div className="container" style={{paddingTop: 20}}>
@@ -51,24 +50,50 @@ function ProfilePage({ onNavigate }) {
             <div className="muted">{user && user.email}</div>
           </div>
           <div style={{display:'flex',gap:6,flexWrap:'wrap'}}>
-            {roleNames.map((r, i) => <span key={i} className="chip program" style={{textTransform:'capitalize'}}>{r}</span>)}
+            {normalizedRoles.map((r, i) => <span key={i} className="chip program" style={{textTransform:'capitalize'}}>{r}</span>)}
           </div>
         </div>
       </div>
 
-      {isPubliant && (
-        <div className="card" style={{marginBottom:12, cursor:'pointer'}} onClick={()=>onNavigate && onNavigate('MY_PUBLICATIONS')}>
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <div>
-              <div style={{fontWeight:700}}>Voir mes publications</div>
-              <div className="muted">Consultez vos actualités publiées</div>
+      {isPubliantFinal && (
+        <div
+          className="card"
+          style={{marginBottom:12, cursor:'pointer'}}
+          onClick={()=>onNavigate && onNavigate('MY_PUBLICATIONS')}
+        >
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div style={{fontSize:22}}>📰</div>
+              <div>
+                <div style={{fontWeight:700}}>Mes news</div>
+                <div className="muted">Retrouvez toutes vos actualités publiées</div>
+              </div>
             </div>
             <button className="nav-btn">Ouvrir</button>
           </div>
         </div>
       )}
 
-      {isStudent && (
+      {isPubliantFinal && (
+        <div
+          className="card"
+          style={{marginBottom:12, cursor:'pointer'}}
+          onClick={()=>onNavigate && onNavigate('CREATE_NEWS')}
+        >
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:16}}>
+            <div style={{display:'flex',alignItems:'center',gap:12}}>
+              <div style={{fontSize:22}}>✍️</div>
+              <div>
+                <div style={{fontWeight:700}}>Créer une news</div>
+                <div className="muted">Rédigez une nouvelle actualité pour vos programmes</div>
+              </div>
+            </div>
+            <button className="nav-btn">Créer</button>
+          </div>
+        </div>
+      )}
+
+      {isStudentUser && (
         <div className="card" style={{marginBottom:12, cursor:'pointer'}} onClick={()=>onNavigate && onNavigate('PROGRAMS')}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div>
@@ -80,7 +105,7 @@ function ProfilePage({ onNavigate }) {
         </div>
       )}
 
-      {isStudent && (
+      {isStudentUser && (
         <div className="card" style={{marginBottom:12}}>
           <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
             <div>

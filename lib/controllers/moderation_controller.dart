@@ -69,15 +69,18 @@ class ModerationController extends GetxController {
       // }
 
       // Mettre à jour l'objet News pour refléter l'approbation et fixer les champs finaux
-      final updateNews = await ApiService.putRequest('/api/news/$newsId/', {
-        'moderator_approved': true,
-        'moderator': moderatorId,
-        'moderated_at': DateTime.now().toIso8601String(),
-        'invalidated': false,
-        'invalidation_reason': null,
-        // if (titleDraft != null) 'title_final': titleDraft,
-        // if (contentDraft != null) 'content_final': contentDraft,
-      });
+      final updateNews = await ApiService.putRequest(
+        '/api/news/$newsId/update/',
+        {
+          'moderator_approved': true,
+          'moderator': moderatorId,
+          'moderated_at': DateTime.now().toIso8601String(),
+          'invalidated': false,
+          'invalidation_reason': null,
+          // if (titleDraft != null) 'title_final': titleDraft,
+          // if (contentDraft != null) 'content_final': contentDraft,
+        },
+      );
       if (updateNews['success'] != true) {
         // On continue mais on informe de l'erreur d'update News
         Get.snackbar(
